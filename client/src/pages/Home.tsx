@@ -2702,13 +2702,22 @@ export default function Home() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Expense
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Monthly Cost
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden sm:table-cell"
+                      >
                         Details
                       </th>
                     </tr>
@@ -2907,16 +2916,28 @@ export default function Home() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Type
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Examples
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Advantages
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Limitations
                       </th>
                     </tr>
@@ -3088,13 +3109,22 @@ export default function Home() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Phase
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Key Deliverable
                       </th>
-                      <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                      >
                         Responsible Role
                       </th>
                     </tr>
@@ -3781,19 +3811,34 @@ export default function Home() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                            <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                            <th
+                              scope="col"
+                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                            >
                               Donor
                             </th>
-                            <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                            <th
+                              scope="col"
+                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                            >
                               Amount
                             </th>
-                            <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                            <th
+                              scope="col"
+                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden sm:table-cell"
+                            >
                               Date
                             </th>
-                            <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                            <th
+                              scope="col"
+                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden md:table-cell"
+                            >
                               Campaign
                             </th>
-                            <th className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                            <th
+                              scope="col"
+                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                            >
                               Type
                             </th>
                           </tr>
