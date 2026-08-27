@@ -113,4 +113,19 @@ describe("GrinOne roadmap page", () => {
       screen.getByRole("button", { name: /One-Click Donate €250/ })
     ).toBeInTheDocument();
   });
+
+  it("persists the compliance checklist to localStorage", () => {
+    localStorage.removeItem("grinone-compliance");
+    render(<App />);
+    fireEvent.click(
+      screen.getByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    );
+    const stored = JSON.parse(
+      localStorage.getItem("grinone-compliance") ?? "[]"
+    );
+    expect(stored).toContain("compliance-0");
+    localStorage.removeItem("grinone-compliance");
+  });
 });

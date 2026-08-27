@@ -295,6 +295,31 @@ function CommandModule({
 }
 
 /* ===== LIVE COUNTDOWN TIMER (demo) ===== */
+/* ===== SCROLL PROGRESS BAR ===== */
+function ScrollProgressBar() {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const update = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+  return (
+    <div
+      className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#2d6a4f] via-[#e63946] to-[#6a4c93] transition-[width] duration-150 ease-out"
+      style={{ width: `${progress}%` }}
+      aria-hidden="true"
+    />
+  );
+}
+
 function CountdownTimer({
   initialSeconds = 2 * 3600 + 14 * 60 + 37,
 }: {
@@ -1645,7 +1670,27 @@ function PhysicalDonationWidget() {
 export default function Home() {
   const [activePhase, setActivePhase] = useState("planning");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(() => {
+    // Persist compliance checklist across visits
+    try {
+      const stored = localStorage.getItem("grinone-compliance");
+      if (stored) return new Set(JSON.parse(stored) as string[]);
+    } catch {
+      // localStorage unavailable or corrupted — start fresh
+    }
+    return new Set();
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "grinone-compliance",
+        JSON.stringify(Array.from(checkedItems))
+      );
+    } catch {
+      // localStorage unavailable — persistence disabled
+    }
+  }, [checkedItems]);
   const [donorFilterCampaign, setDonorFilterCampaign] = useState("All");
   const [donorFilterType, setDonorFilterType] = useState("All");
   // Donation form state
@@ -1949,6 +1994,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#0a0a14] text-[#e0e0e0]">
       {/* Sticky Navigation — Command Bar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a14]/95 backdrop-blur-xl border-b border-white/[0.04]">
+        <ScrollProgressBar />
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <GrinOneLogo size={28} />
@@ -4129,14 +4175,64 @@ export default function Home() {
                   <span className="font-mono text-[9px] text-gray-500 uppercase">
                     Transaction Ref
                   </span>
-                  <p className="font-mono text-sm text-green-400">
-                    {donationTxnRef}
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="font-mono text-sm text-green-400">
+                      {donationTxnRef}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard
+                          ?.writeText(donationTxnRef)
+                          .then(() => toast.success("Reference copied!"))
+                          .catch(() => toast.error("Could not copy"));
+                      }}
+                      aria-label="Copy transaction reference"
+                      className="font-mono text-[9px] px-2 py-0.5 rounded border border-white/[0.1] text-gray-400 hover:text-white hover:border-white/[0.2] transition-colors"
+                    >
+                      COPY
+                    </button>
+                  </div>
                 </div>
                 <p className="text-[10px] text-gray-500 mb-4">
                   A confirmation email will be sent to{" "}
                   {donorEmail || "your email address"} with your tax receipt.
                 </p>
+                {/* Social share — spread the word */}
+                <div className="mb-4">
+                  <p className="font-mono text-[8px] text-gray-600 uppercase tracking-widest mb-2">
+                    Spread the word
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    {[
+                      {
+                        label: "Share on X",
+                        short: "X",
+                        url: `https://twitter.com/intent/tweet?text=${encodeURIComponent("I just donated to GrinOne! Join me in making an impact.")}`,
+                      },
+                      {
+                        label: "Share on Facebook",
+                        short: "Facebook",
+                        url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://grinone.org")}`,
+                      },
+                      {
+                        label: "Share on LinkedIn",
+                        short: "LinkedIn",
+                        url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://grinone.org")}`,
+                      },
+                    ].map(s => (
+                      <button
+                        key={s.short}
+                        onClick={() =>
+                          window.open(s.url, "_blank", "noopener,noreferrer")
+                        }
+                        aria-label={s.label}
+                        className="font-mono text-[9px] px-3 py-1.5 rounded border border-white/[0.08] bg-white/[0.03] text-gray-400 hover:text-white hover:border-white/[0.2] transition-colors"
+                      >
+                        {s.short}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     setShowDonationModal(false);
