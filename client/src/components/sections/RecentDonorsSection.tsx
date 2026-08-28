@@ -3,6 +3,8 @@ import { CheckCircle2, Star, Zap } from "lucide-react";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { CommandModule } from "@/components/shared/CommandModule";
 import { useDonation } from "@/contexts/DonationContext";
+import { Pagination } from "@/components/shared/Pagination";
+import { DEFAULT_PAGE_SIZE, usePagination } from "@/lib/usePagination";
 import { useState } from "react";
 import { Users, Trophy, Crown, Medal, Bot, Radio, Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +39,30 @@ export function RecentDonorsSection({
   const { openDonation } = useDonation();
   const [donorFilterCampaign, setDonorFilterCampaign] = useState("All");
   const [donorFilterType, setDonorFilterType] = useState("All");
+
+  // Combined donor list: live-bot donations first, then the static sample data
+  const allDonorsForTable = [...botDonations, ...RECENT_DONORS];
+  const filteredDonors = allDonorsForTable.filter(
+    d =>
+      (donorFilterCampaign === "All" || d.campaign === donorFilterCampaign) &&
+      (donorFilterType === "All" || d.type === donorFilterType)
+  );
+  const filteredTotal = filteredDonors.reduce((sum, d) => {
+    const num = parseInt(d.amount.replace(/[$,]/g, ""), 10);
+    return sum + num;
+  }, 0);
+
+  // Never render more than 10 donor rows at once
+  const {
+    page: donorPage,
+    pageCount: donorPageCount,
+    setPage: setDonorPage,
+    reset: resetDonorPage,
+    startIndex: donorStartIndex,
+    endIndex: donorEndIndex,
+  } = usePagination(filteredDonors.length, DEFAULT_PAGE_SIZE);
+  const pagedDonors = filteredDonors.slice(donorStartIndex, donorEndIndex);
+
   return (
     <>
       {/* Recent Donors */}
@@ -232,7 +258,10 @@ export function RecentDonorsSection({
                 </span>
                 <select
                   value={donorFilterCampaign}
-                  onChange={e => setDonorFilterCampaign(e.target.value)}
+                  onChange={e => {
+                    setDonorFilterCampaign(e.target.value);
+                    resetDonorPage();
+                  }}
                   aria-label="Filter by campaign"
                   className="bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1 text-[10px] text-gray-300 font-mono cursor-pointer hover:bg-white/[0.06] transition-colors focus:outline-none focus:border-[#e63946]/50"
                 >
@@ -266,6 +295,7 @@ export function RecentDonorsSection({
                   onClick={() => {
                     setDonorFilterCampaign("All");
                     setDonorFilterType("All");
+                    resetDonorPage();
                   }}
                   className="font-mono text-[9px] text-[#e63946] hover:text-white underline transition-colors"
                 >
@@ -273,136 +303,132 @@ export function RecentDonorsSection({
                 </button>
               )}
             </div>
-            {(() => {
-              const allDonorsForTable = [...botDonations, ...RECENT_DONORS];
-              const filteredDonors = allDonorsForTable.filter(
-                d =>
-                  (donorFilterCampaign === "All" ||
-                    d.campaign === donorFilterCampaign) &&
-                  (donorFilterType === "All" || d.type === donorFilterType)
-              );
-              const filteredTotal = filteredDonors.reduce((sum, d) => {
-                const num = parseInt(d.amount.replace(/[$,]/g, ""), 10);
-                return sum + num;
-              }, 0);
-              return (
-                <>
-                  <CommandModule className="p-1">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                            <th
-                              scope="col"
-                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
-                            >
-                              Donor
-                            </th>
-                            <th
-                              scope="col"
-                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
-                            >
-                              Amount
-                            </th>
-                            <th
-                              scope="col"
-                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden sm:table-cell"
-                            >
-                              Date
-                            </th>
-                            <th
-                              scope="col"
-                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden md:table-cell"
-                            >
-                              Campaign
-                            </th>
-                            <th
-                              scope="col"
-                              className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
-                            >
-                              Type
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredDonors.map((donor, i) => (
-                            <motion.tr
-                              key={i}
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.3, delay: i * 0.04 }}
-                              className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
-                            >
-                              <td className="px-4 py-2.5">
-                                <div className="flex items-center gap-2.5">
-                                  <div
-                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                                    style={{
-                                      backgroundColor:
-                                        TYPE_COLORS[donor.type] || "#6a4c93",
-                                    }}
-                                  >
-                                    {donor.avatar}
-                                  </div>
-                                  <span className="text-gray-200 font-medium">
-                                    {donor.name}
-                                  </span>
-                                  {botDonations.includes(donor) && (
-                                    <span
-                                      title="Simulated live activity"
-                                      className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 font-mono text-[7px] text-[#2d6a4f]"
-                                    >
-                                      <Bot size={7} />
-                                      BOT
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <span className="font-mono text-xs font-semibold text-green-400">
-                                  {donor.amount}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5 text-gray-500 hidden sm:table-cell">
-                                {donor.date}
-                              </td>
-                              <td className="px-4 py-2.5 text-gray-400 hidden md:table-cell">
-                                {donor.campaign}
-                              </td>
-                              <td className="px-4 py-2.5">
+            <>
+              <CommandModule className="p-1">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                        <th
+                          scope="col"
+                          className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                        >
+                          Donor
+                        </th>
+                        <th
+                          scope="col"
+                          className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                        >
+                          Amount
+                        </th>
+                        <th
+                          scope="col"
+                          className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden sm:table-cell"
+                        >
+                          Date
+                        </th>
+                        <th
+                          scope="col"
+                          className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider hidden md:table-cell"
+                        >
+                          Campaign
+                        </th>
+                        <th
+                          scope="col"
+                          className="text-left px-4 py-2.5 font-mono text-[10px] text-gray-500 uppercase tracking-wider"
+                        >
+                          Type
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedDonors.map((donor, i) => (
+                        <motion.tr
+                          key={i}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: i * 0.04 }}
+                          className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
+                        >
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                                style={{
+                                  backgroundColor:
+                                    TYPE_COLORS[donor.type] || "#6a4c93",
+                                }}
+                              >
+                                {donor.avatar}
+                              </div>
+                              <span className="text-gray-200 font-medium">
+                                {donor.name}
+                              </span>
+                              {botDonations.includes(donor) && (
                                 <span
-                                  className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase"
-                                  style={{
-                                    backgroundColor: `${TYPE_COLORS[donor.type] || "#6a4c93"}15`,
-                                    color: TYPE_COLORS[donor.type] || "#6a4c93",
-                                  }}
+                                  title="Simulated live activity"
+                                  className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 font-mono text-[7px] text-[#2d6a4f]"
                                 >
-                                  {donor.type}
+                                  <Bot size={7} />
+                                  BOT
                                 </span>
-                              </td>
-                            </motion.tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CommandModule>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className="font-mono text-xs font-semibold text-green-400">
+                              {donor.amount}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-gray-500 hidden sm:table-cell">
+                            {donor.date}
+                          </td>
+                          <td className="px-4 py-2.5 text-gray-400 hidden md:table-cell">
+                            {donor.campaign}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase"
+                              style={{
+                                backgroundColor: `${TYPE_COLORS[donor.type] || "#6a4c93"}15`,
+                                color: TYPE_COLORS[donor.type] || "#6a4c93",
+                              }}
+                            >
+                              {donor.type}
+                            </span>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CommandModule>
 
-                  {/* Total summary */}
-                  <div className="mt-3 flex items-center justify-between px-4">
-                    <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wider">
-                      Showing {filteredDonors.length} of{" "}
-                      {allDonorsForTable.length} donations
-                    </span>
-                    <span className="font-mono text-[10px] text-white font-semibold">
-                      Total:{" "}
-                      <span className="text-green-400">
-                        ${filteredTotal.toLocaleString()}
-                      </span>
-                    </span>
-                  </div>
-                </>
-              );
-            })()}
+              {/* Total summary */}
+              <div className="mt-3 flex items-center justify-between px-4">
+                <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wider">
+                  {filteredDonors.length} of {allDonorsForTable.length}{" "}
+                  donations match
+                </span>
+                <span className="font-mono text-[10px] text-white font-semibold">
+                  Total:{" "}
+                  <span className="text-green-400">
+                    ${filteredTotal.toLocaleString()}
+                  </span>
+                </span>
+              </div>
+
+              {/* Row pagination — caps the table at 10 rows per page */}
+              <Pagination
+                page={donorPage}
+                pageCount={donorPageCount}
+                onPageChange={setDonorPage}
+                totalItems={filteredDonors.length}
+                pageSize={DEFAULT_PAGE_SIZE}
+                itemLabel="DONORS"
+                accent="#e63946"
+              />
+            </>
 
             {/* Monthly Leaderboard */}
             <div className="mt-8">

@@ -168,6 +168,56 @@ describe("GrinOne multi-page app", () => {
     localStorage.removeItem("grinone-compliance");
   });
 
+  it("transparency page: compliance checklist paginates at 10 rows", () => {
+    resetLocation();
+    render(<App />);
+    navigate("Go to Transparency");
+
+    // Page 1 shows the first 10 of 15 items only
+    expect(
+      screen.getByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Staff training on data handling and privacy completed"
+      )
+    ).toBeNull();
+    expect(screen.getByText(/Showing 1–10 of 15 items/i)).toBeInTheDocument();
+
+    // Next page reveals the remaining 5
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(
+      screen.getByText("Staff training on data handling and privacy completed")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    ).toBeNull();
+    expect(screen.getByText(/Showing 11–15 of 15 items/i)).toBeInTheDocument();
+
+    // And back again
+    fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
+    expect(
+      screen.getByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("demo page: donor table never renders more than 10 rows", () => {
+    resetLocation();
+    render(<App />);
+    navigate("Go to Live Demo");
+
+    // 1 header row + at most 10 body rows
+    const rows = screen.getAllByRole("row");
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rows.length).toBeLessThanOrEqual(11);
+  });
+
   it("roadmap page: shows all five phases, deliverables and timeline", () => {
     resetLocation();
     render(<App />);

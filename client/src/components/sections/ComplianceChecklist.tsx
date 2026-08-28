@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckSquare, Lock, Square } from "lucide-react";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { CommandModule } from "@/components/shared/CommandModule";
+import { Pagination } from "@/components/shared/Pagination";
+import { DEFAULT_PAGE_SIZE, usePagination } from "@/lib/usePagination";
 
 const complianceItems = [
   "SSL/TLS certificate installed and enforced on all pages",
@@ -53,6 +55,19 @@ export function ComplianceChecklist() {
     });
   }, []);
 
+  // Never render more than 10 checklist rows at once
+  const {
+    page: compliancePage,
+    pageCount: compliancePageCount,
+    setPage: setCompliancePage,
+    startIndex: complianceStartIndex,
+    endIndex: complianceEndIndex,
+  } = usePagination(complianceItems.length, DEFAULT_PAGE_SIZE);
+  const pagedComplianceItems = complianceItems.slice(
+    complianceStartIndex,
+    complianceEndIndex
+  );
+
   return (
     <>
       {/* Compliance Checklist */}
@@ -74,8 +89,8 @@ export function ComplianceChecklist() {
             </p>
             <CommandModule className="p-1">
               <div className="space-y-0.5 p-2">
-                {complianceItems.map((item, i) => {
-                  const key = `compliance-${i}`;
+                {pagedComplianceItems.map((item, i) => {
+                  const key = `compliance-${complianceStartIndex + i}`;
                   const isChecked = checkedItems.has(key);
                   return (
                     <button
@@ -109,6 +124,17 @@ export function ComplianceChecklist() {
                 })}
               </div>
             </CommandModule>
+
+            {/* Checklist pagination — caps the list at 10 rows per page */}
+            <Pagination
+              page={compliancePage}
+              pageCount={compliancePageCount}
+              onPageChange={setCompliancePage}
+              totalItems={complianceItems.length}
+              pageSize={DEFAULT_PAGE_SIZE}
+              itemLabel="ITEMS"
+              accent="#f77f00"
+            />
           </AnimatedSection>
         </div>
       </section>

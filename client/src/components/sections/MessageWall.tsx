@@ -2,6 +2,8 @@ import { useState } from "react";
 import { MessageCircleHeart, Sparkles, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
+import { Pagination } from "@/components/shared/Pagination";
+import { DEFAULT_PAGE_SIZE, usePagination } from "@/lib/usePagination";
 
 export type DemoMessage = {
   name: string;
@@ -21,6 +23,16 @@ export function MessageWall({
   const [messageText, setMessageText] = useState("");
   const [messageCampaign, setMessageCampaign] = useState("");
   const [isMessageProcessing, setIsMessageProcessing] = useState(false);
+
+  // Never render more than 10 messages at once
+  const {
+    page: messagePage,
+    pageCount: messagePageCount,
+    setPage: setMessagePage,
+    startIndex: messageStartIndex,
+    endIndex: messageEndIndex,
+  } = usePagination(demoMessages.length, DEFAULT_PAGE_SIZE);
+  const pagedMessages = demoMessages.slice(messageStartIndex, messageEndIndex);
 
   // Simulated message submission (demo only)
   const handleMessageSubmit = () => {
@@ -122,7 +134,7 @@ export function MessageWall({
             {/* Messages display */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {demoMessages.length > 0 ? (
-                demoMessages.map((msg, i) => (
+                pagedMessages.map((msg, i) => (
                   <div
                     key={i}
                     className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-3"
@@ -156,6 +168,17 @@ export function MessageWall({
                 </div>
               )}
             </div>
+
+            {/* Message pagination — caps the wall at 10 messages per page */}
+            <Pagination
+              page={messagePage}
+              pageCount={messagePageCount}
+              onPageChange={setMessagePage}
+              totalItems={demoMessages.length}
+              pageSize={DEFAULT_PAGE_SIZE}
+              itemLabel="MESSAGES"
+              accent="#6a4c93"
+            />
           </AnimatedSection>
         </div>
       </section>

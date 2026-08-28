@@ -80,3 +80,12 @@
 - [x] Footer quick navigation links
 - [x] Extract shared pieces: lib/phases, data/{donations,demo}, shared components (AnimatedSection, CommandModule, ScrollProgressBar, CountdownTimer), section components, donation widgets (ImpactCalculator, PhysicalDonationWidget, DonationModal)
 - [x] Update smoke tests to navigate between pages (8 passing)
+
+## List Pagination (10-Row Cap)
+
+- [x] Add reusable `Pagination` control (mission-control styled: range label, prev/next, numbered pages with ellipsis windowing, aria-current/disabled states) + `usePagination` hook with page clamping and filter reset
+- [x] Paginate Recent Donors table on /demo at 10 rows (grows with live-bot donations; resets to page 1 when filters change)
+- [x] Paginate Donor Message Wall at 10 messages (grows with live-bot messages)
+- [x] Paginate Compliance Checklist at 10 rows (15 items → 2 pages; checklist keys stay globally indexed so localStorage progress is unaffected)
+- [x] Audited all other lists — each already ≤10 rows: monthly cost table (10), leaderboard (5), milestones (5), donation types (9), in-kind categories (9), common issues (8), essential features (3×7 card grid), bot activity feed (capped at 6)
+- [x] Tests: Pagination unit tests (4) + app integration tests (10) — 14 passing
