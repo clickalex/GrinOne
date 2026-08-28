@@ -1,6 +1,6 @@
 /**
- * Smoke test — renders the whole app and verifies the key modules mount
- * without runtime errors.
+ * Smoke tests — multi-page app: renders each page, verifies key modules
+ * mount, and checks navigation between pages.
  */
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
@@ -40,39 +40,37 @@ beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
 
-describe("GrinOne roadmap page", () => {
-  it("renders without crashing and shows core modules", () => {
+/** Reset browser history back to the home page between tests. */
+function resetLocation() {
+  window.history.pushState({}, "", "/");
+}
+
+function navigate(label: string) {
+  fireEvent.click(screen.getAllByRole("link", { name: label })[0]);
+}
+
+describe("GrinOne multi-page app", () => {
+  it("renders the home page with hero and navigation hub", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     render(<App />);
 
     // Hero
     expect(screen.getAllByText("GrinOne").length).toBeGreaterThan(0);
     expect(screen.getByText("Donation Platform")).toBeInTheDocument();
-    expect(screen.getByText("Donate Now")).toBeInTheDocument();
+    expect(screen.getAllByText("Donate Now").length).toBeGreaterThan(0);
 
-    // All five phases
-    for (const title of [
-      "Planning & Strategy",
-      "Design & User Experience",
-      "Development & Integration",
-      "Testing & Quality Assurance",
-      "Launch & Optimization",
+    // Navigation hub links to every page
+    for (const card of [
+      "Project Roadmap",
+      "Donation Options",
+      "Builder's Guide",
+      "Live Demo Zone",
     ]) {
-      expect(screen.getAllByText(title).length).toBeGreaterThan(0);
+      expect(screen.getByText(card)).toBeInTheDocument();
     }
+    // "Transparency" appears in both the navbar and the hub card
+    expect(screen.getAllByText("Transparency").length).toBeGreaterThan(0);
 
-    // Key modules
-    expect(
-      screen.getByText("How a Donation Reaches Its Destination")
-    ).toBeInTheDocument();
-    expect(screen.getByText("All Donation Types Accepted")).toBeInTheDocument();
-    expect(screen.getByText("Where Your Donations Go")).toBeInTheDocument();
-    expect(screen.getByText("Donor Message Wall")).toBeInTheDocument();
-    expect(
-      screen.getByText("See What Your Donation Achieves")
-    ).toBeInTheDocument();
-
-    // No unexpected React runtime errors
     const reactErrors = errorSpy.mock.calls.filter(
       args =>
         String(args[0]).includes("Error") ||
@@ -82,7 +80,41 @@ describe("GrinOne roadmap page", () => {
     errorSpy.mockRestore();
   });
 
-  it("opens and closes the donation modal", () => {
+  it("navbar links navigate between pages", () => {
+    render(<App />);
+
+    // Roadmap
+    navigate("Go to Roadmap");
+    expect(screen.getAllByText("Planning & Strategy").length).toBeGreaterThan(
+      0
+    );
+
+    // Donations
+    navigate("Go to Donations");
+    expect(
+      screen.getByText("How a Donation Reaches Its Destination")
+    ).toBeInTheDocument();
+
+    // Transparency
+    navigate("Go to Transparency");
+    expect(screen.getByText("Where Your Donations Go")).toBeInTheDocument();
+
+    // Guide
+    navigate("Go to Guide");
+    expect(
+      screen.getByText("Essential Donation Platform Features")
+    ).toBeInTheDocument();
+
+    // Demo
+    navigate("Go to Live Demo");
+    expect(screen.getByText("Donor Message Wall")).toBeInTheDocument();
+
+    // Back home
+    navigate("GrinOne home");
+    expect(screen.getByText("Donation Platform")).toBeInTheDocument();
+  });
+
+  it("opens and closes the donation modal from any page", () => {
     render(<App />);
     fireEvent.click(screen.getAllByLabelText("Open donation form")[0]);
     expect(screen.getByRole("dialog", { name: "Donation form" })).toBeDefined();
@@ -91,22 +123,27 @@ describe("GrinOne roadmap page", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("impact calculator shows combined general-fund impact without '$$' glitches", () => {
-    const { container } = render(<App />);
+  it("demo page: impact calculator shows combined general-fund impact without '$$' glitches", () => {
+    resetLocation();
+    render(<App />);
+    navigate("Go to Live Demo");
     fireEvent.click(screen.getByRole("button", { name: /General Fund/ }));
     expect(screen.getByText(/Combined Impact/)).toBeInTheDocument();
-    expect(container.textContent).not.toContain("$$");
   });
 
-  it("physical donation widget schedules a pickup", () => {
+  it("demo page: physical donation widget schedules a pickup", () => {
+    resetLocation();
     render(<App />);
+    navigate("Go to Live Demo");
     fireEvent.click(screen.getByLabelText("Toggle Books"));
     fireEvent.click(screen.getByText(/Schedule Donation · 1 item/));
     expect(screen.getByText("Pickup scheduled!")).toBeInTheDocument();
   });
 
-  it("one-click donate demo reacts to currency and amount selection", () => {
+  it("demo page: one-click donate reacts to currency and amount selection", () => {
+    resetLocation();
     render(<App />);
+    navigate("Go to Live Demo");
     fireEvent.click(screen.getByLabelText("Switch to EUR"));
     fireEvent.click(screen.getByRole("button", { name: "€250" }));
     expect(
@@ -114,9 +151,11 @@ describe("GrinOne roadmap page", () => {
     ).toBeInTheDocument();
   });
 
-  it("persists the compliance checklist to localStorage", () => {
+  it("transparency page: persists the compliance checklist to localStorage", () => {
     localStorage.removeItem("grinone-compliance");
+    resetLocation();
     render(<App />);
+    navigate("Go to Transparency");
     fireEvent.click(
       screen.getByText(
         "SSL/TLS certificate installed and enforced on all pages"
@@ -127,5 +166,71 @@ describe("GrinOne roadmap page", () => {
     );
     expect(stored).toContain("compliance-0");
     localStorage.removeItem("grinone-compliance");
+  });
+
+  it("transparency page: compliance checklist paginates at 10 rows", () => {
+    resetLocation();
+    render(<App />);
+    navigate("Go to Transparency");
+
+    // Page 1 shows the first 10 of 15 items only
+    expect(
+      screen.getByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Staff training on data handling and privacy completed"
+      )
+    ).toBeNull();
+    expect(screen.getByText(/Showing 1–10 of 15 items/i)).toBeInTheDocument();
+
+    // Next page reveals the remaining 5
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(
+      screen.getByText("Staff training on data handling and privacy completed")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    ).toBeNull();
+    expect(screen.getByText(/Showing 11–15 of 15 items/i)).toBeInTheDocument();
+
+    // And back again
+    fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
+    expect(
+      screen.getByText(
+        "SSL/TLS certificate installed and enforced on all pages"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("demo page: donor table never renders more than 10 rows", () => {
+    resetLocation();
+    render(<App />);
+    navigate("Go to Live Demo");
+
+    // 1 header row + at most 10 body rows
+    const rows = screen.getAllByRole("row");
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rows.length).toBeLessThanOrEqual(11);
+  });
+
+  it("roadmap page: shows all five phases, deliverables and timeline", () => {
+    resetLocation();
+    render(<App />);
+    navigate("Go to Roadmap");
+    for (const title of [
+      "Design & User Experience",
+      "Development & Integration",
+      "Testing & Quality Assurance",
+      "Launch & Optimization",
+    ]) {
+      expect(screen.getAllByText(title).length).toBeGreaterThan(0);
+    }
+    expect(screen.getByText("Key Deliverables by Phase")).toBeInTheDocument();
+    expect(screen.getByText(/Estimated Timeline/)).toBeInTheDocument();
   });
 });

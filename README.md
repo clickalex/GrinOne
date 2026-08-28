@@ -1,6 +1,6 @@
 # GrinOne — Donation Platform Roadmap
 
-A "Mission Control"-styled single-page website that walks through every phase of planning, designing, building, testing, and launching a transparent donation platform — plus a fully client-side **Live Demo Zone** with an interactive donation form, impact calculator, one-click donate showcase, physical (in-kind) donation scheduler, and donor message wall.
+A "Mission Control"-styled multi-page website that walks through every phase of planning, designing, building, testing, and launching a transparent donation platform — plus a fully client-side **Live Demo Zone** with an interactive donation form, impact calculator, one-click donate showcase, physical (in-kind) donation scheduler, and donor message wall.
 
 ![Stack](https://img.shields.io/badge/React_19-Vite_7-blue) ![Styling](https://img.shields.io/badge/TailwindCSS_4-Framer_Motion-purple)
 
@@ -37,11 +37,22 @@ pnpm start      # serve the production build with Express
 ## Project structure
 
 ```
-client/          React app (Vite root)
-  src/pages/Home.tsx   the entire roadmap + demo page
-  src/components/      GrinOne logo, ErrorBoundary, shadcn/ui library
-server/index.ts  minimal Express static server for production
-DOCS/            design brief (ideas.md), feature log (todo.md), original ZIP
+client/            React app (Vite root)
+  src/pages/            6 pages: Home (overview hub), Roadmap, Donations,
+                        Transparency, Guide, Demo (+ NotFound)
+  src/components/       layout (Navbar, Footer, PageHeader, Layout),
+                        sections (one per roadmap/demo module),
+                        donation (modal, ImpactCalculator, scheduler),
+                        shared (AnimatedSection, CommandModule, ...),
+                        GrinOne logo, ErrorBoundary, shadcn/ui library
+  src/contexts/         DonationContext (global donation modal)
+  src/data/ + src/lib/  shared data sets & phase definitions
+server/index.ts    minimal Express static server for production
+DOCS/              design brief (ideas.md), feature log (todo.md), original ZIP
 ```
+
+Navigation: a sticky command-bar navbar (with mobile hamburger menu) links
+every page, the DONATE button opens the donation modal from anywhere, and the
+home page hosts a card hub linking to each mission module.
 
 All demo interactions are simulated in the browser — no backend calls, no real payments.

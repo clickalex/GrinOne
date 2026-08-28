@@ -64,3 +64,28 @@
 - [x] Add physical donation category to donation types data (clothes, toys, books, electronics, furniture, food, medical supplies, vehicles)
 - [x] Add in-kind donation section to roadmap showing collection & distribution flow
 - [x] Add demo widget for physical donation scheduling (pickup/drop-off options, condition categories, photos)
+
+## Multi-Page Navigation Restructure
+
+- [x] Split the single 4,800-line Home page into six focused pages (wouter routes):
+  - `/` Overview — hero + mission-module navigation hub
+  - `/roadmap` — 5 phases + in-page phase quick-nav + deliverables + timeline
+  - `/donations` — donation flow, all 9 types, physical/in-kind overview
+  - `/transparency` — fund allocation, cost breakdown, compliance checklist
+  - `/guide` — essential features, platform comparison, tech stack, troubleshooting
+  - `/demo` — one-click donate, impact calculator, recent donors + live bots, physical donation scheduler, message wall
+- [x] Sticky command-bar navbar with per-page links, active-route highlighting, mobile hamburger menu, and always-visible DONATE button
+- [x] Global donation modal via DonationContext (opens from any page)
+- [x] Scroll-to-top on route change + floating scroll-to-top button
+- [x] Footer quick navigation links
+- [x] Extract shared pieces: lib/phases, data/{donations,demo}, shared components (AnimatedSection, CommandModule, ScrollProgressBar, CountdownTimer), section components, donation widgets (ImpactCalculator, PhysicalDonationWidget, DonationModal)
+- [x] Update smoke tests to navigate between pages (8 passing)
+
+## List Pagination (10-Row Cap)
+
+- [x] Add reusable `Pagination` control (mission-control styled: range label, prev/next, numbered pages with ellipsis windowing, aria-current/disabled states) + `usePagination` hook with page clamping and filter reset
+- [x] Paginate Recent Donors table on /demo at 10 rows (grows with live-bot donations; resets to page 1 when filters change)
+- [x] Paginate Donor Message Wall at 10 messages (grows with live-bot messages)
+- [x] Paginate Compliance Checklist at 10 rows (15 items → 2 pages; checklist keys stay globally indexed so localStorage progress is unaffected)
+- [x] Audited all other lists — each already ≤10 rows: monthly cost table (10), leaderboard (5), milestones (5), donation types (9), in-kind categories (9), common issues (8), essential features (3×7 card grid), bot activity feed (capped at 6)
+- [x] Tests: Pagination unit tests (4) + app integration tests (10) — 14 passing
