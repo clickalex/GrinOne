@@ -16,6 +16,11 @@ A "Mission Control"-styled single-page website that walks through every phase of
   - One-click donate with saved cards, live countdown, progress thermometer, multi-currency
   - Physical donation scheduler (categories, condition, pickup/drop-off/ship)
   - Donor message wall
+  - **Live Activity Bots** — a toggleable simulator (in the Recent Donors module) that
+    periodically "donates" and posts gratitude messages as fictional supporters, bumping
+    the campaign thermometer, live donor count, and message wall in real time so the demo
+    feels active. Pauses automatically on hidden tabs or `prefers-reduced-motion`; every
+    bot-generated row/message is tagged with a `BOT` badge and can be paused with one click.
 - Compliance checklist, platform comparison, tech-stack guide, troubleshooting, timeline
 - Accessible: `prefers-reduced-motion` support, keyboard-closable modal, aria labels
 

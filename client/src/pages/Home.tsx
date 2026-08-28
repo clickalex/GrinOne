@@ -70,6 +70,8 @@ import {
   UserX,
   Database as DatabaseIcon,
   Calculator,
+  Bot,
+  Radio,
 } from "lucide-react";
 import GrinOneLogo from "@/components/GrinOneLogo";
 import { toast } from "sonner";
@@ -592,6 +594,74 @@ const DONATION_FLOW_STEPS = [
     icon: PieChart,
   },
 ];
+
+/* ===== LIVE ACTIVITY BOTS (demo only) =====
+ * Simulates other "donors" and "supporters" being active on the page —
+ * client-side only, no network calls, no real money. Purely for demo
+ * atmosphere so the page doesn't feel static/empty.
+ */
+const BOT_DONOR_NAMES = [
+  "Alex Rivera",
+  "Nina Petrova",
+  "Tomás García",
+  "Grace Okafor",
+  "Wei Zhang",
+  "Fatima Al-Sayed",
+  "Liam O'Connor",
+  "Sofia Rossi",
+  "Kenji Watanabe",
+  "Ava Johnson",
+  "Diego Fernández",
+  "Hana Kobayashi",
+  "Noah Bennett",
+  "Aisha Bello",
+  "Ethan Park",
+  "Ingrid Larsen",
+  "Marcus Webb",
+  "Ravi Patel",
+  "Chloé Dubois",
+  "Omar Haddad",
+];
+const BOT_DONATION_AMOUNTS = [
+  10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 120, 150, 200, 250, 300, 500,
+];
+const BOT_DONATION_CAMPAIGNS = [
+  "Education Programs",
+  "Healthcare",
+  "Community Development",
+  "Environment & Sustainability",
+  "Emergency Relief",
+];
+const BOT_DONATION_TYPES = ["One-Time", "Recurring", "Monthly"];
+const BOT_MESSAGE_TEXTS = [
+  "So glad to be part of this — keep up the amazing work! 💛",
+  "Small gift, big hope. Proud to support this cause.",
+  "This platform makes it so easy to see the impact. Thank you!",
+  "In honor of my grandmother, who believed in giving back.",
+  "Every child deserves this chance. Happy to help.",
+  "Watching this campaign grow has been incredible. Count me in.",
+  "Sending love and support from across the world 🌍",
+  "Transparency like this is why I keep donating here.",
+  "Matched by my employer today — double the impact!",
+  "Just set up a recurring gift. See you next month!",
+  "Thank you for making giving feel this simple.",
+  "Donating in memory of a dear friend. This one's for you.",
+];
+
+type LiveBotEvent = {
+  id: string;
+  kind: "donation" | "message";
+  name: string;
+  amount?: string;
+  campaign?: string;
+  type?: string;
+  message?: string;
+  timestamp: number;
+};
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
 /* ===== RECENT DONORS DATA ===== */
 const RECENT_DONORS = [
@@ -1740,8 +1810,131 @@ export default function Home() {
   ];
   // Demo message wall entries (client-side only)
   const [demoMessages, setDemoMessages] = useState<
-    Array<{ name: string; message: string; campaign: string }>
+    Array<{
+      name: string;
+      message: string;
+      campaign: string;
+      isBot?: boolean;
+    }>
   >([]);
+
+  /* ===== LIVE ACTIVITY BOTS (demo only) =====
+   * Purely client-side simulation of other people using the page — no
+   * network calls, no real donations. Lets a demo/sandbox feel "alive"
+   * with activity instead of static sample data.
+   */
+  const [botsActive, setBotsActive] = useState(true);
+  const [botDonations, setBotDonations] = useState<
+    Array<{
+      name: string;
+      amount: string;
+      date: string;
+      campaign: string;
+      type: string;
+      avatar: string;
+    }>
+  >([]);
+  const [botEvents, setBotEvents] = useState<LiveBotEvent[]>([]);
+  const [botTotalRaised, setBotTotalRaised] = useState(0);
+  const [botDonorCount, setBotDonorCount] = useState(0);
+  const prefersReducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    prefersReducedMotionRef.current = mql.matches;
+    const handler = (e: MediaQueryListEvent) => {
+      prefersReducedMotionRef.current = e.matches;
+    };
+    mql.addEventListener?.("change", handler);
+    return () => mql.removeEventListener?.("change", handler);
+  }, []);
+
+  // Bot activity engine: periodically simulates a new donor donating or
+  // posting a gratitude message. Pauses when the tab is hidden, when the
+  // user has "prefers-reduced-motion" set, or when toggled off.
+  useEffect(() => {
+    if (!botsActive) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const scheduleNext = () => {
+      // 4-9 seconds between simulated events
+      const delay = 4000 + Math.random() * 5000;
+      timeoutId = setTimeout(() => {
+        if (cancelled) return;
+        if (document.hidden || prefersReducedMotionRef.current) {
+          scheduleNext();
+          return;
+        }
+        const isMessage = Math.random() < 0.3;
+        const name = pickRandom(BOT_DONOR_NAMES);
+        const initials = name
+          .split(" ")
+          .map(p => p[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase();
+
+        if (isMessage) {
+          const campaign = pickRandom(BOT_DONATION_CAMPAIGNS);
+          const message = pickRandom(BOT_MESSAGE_TEXTS);
+          setDemoMessages(prev =>
+            [{ name, message, campaign, isBot: true }, ...prev].slice(0, 40)
+          );
+          setBotEvents(prev =>
+            [
+              {
+                id: `bot-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                kind: "message" as const,
+                name,
+                campaign,
+                message,
+                timestamp: Date.now(),
+              },
+              ...prev,
+            ].slice(0, 20)
+          );
+        } else {
+          const amount = pickRandom(BOT_DONATION_AMOUNTS);
+          const campaign = pickRandom(BOT_DONATION_CAMPAIGNS);
+          const type = pickRandom(BOT_DONATION_TYPES);
+          const entry = {
+            name,
+            amount: `$${amount}`,
+            date: "Just now",
+            campaign,
+            type,
+            avatar: initials.slice(0, 1),
+          };
+          setBotDonations(prev => [entry, ...prev].slice(0, 30));
+          setBotTotalRaised(prev => prev + amount);
+          setBotDonorCount(prev => prev + 1);
+          setBotEvents(prev =>
+            [
+              {
+                id: `bot-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                kind: "donation" as const,
+                name,
+                amount: `$${amount}`,
+                campaign,
+                type,
+                timestamp: Date.now(),
+              },
+              ...prev,
+            ].slice(0, 20)
+          );
+        }
+        scheduleNext();
+      }, delay);
+    };
+
+    scheduleNext();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [botsActive]);
 
   // Simulated donation submission (demo only - no real payment)
   const handleDonate = () => {
@@ -3426,30 +3619,46 @@ export default function Home() {
                 </p>
 
                 {/* Progress Thermometer */}
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-mono text-[#2d6a4f] font-bold">
-                      $847,200 raised
-                    </span>
-                    <span className="text-[10px] font-mono text-gray-500">
-                      Goal: $1,000,000
-                    </span>
-                  </div>
-                  <div className="w-full h-2.5 bg-white/[0.05] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#2d6a4f] via-[#40916c] to-[#52b788] transition-all duration-1000"
-                      style={{ width: "84.7%" }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[9px] text-gray-500 font-mono">
-                      12,458 donors
-                    </span>
-                    <span className="text-[9px] font-bold text-[#f77f00] font-mono">
-                      84.7% complete
-                    </span>
-                  </div>
-                </div>
+                {(() => {
+                  const CAMPAIGN_GOAL = 1000000;
+                  const CAMPAIGN_BASE_RAISED = 847200;
+                  const CAMPAIGN_BASE_DONORS = 12458;
+                  const liveRaised = Math.min(
+                    CAMPAIGN_GOAL,
+                    CAMPAIGN_BASE_RAISED + botTotalRaised
+                  );
+                  const livePercent = (liveRaised / CAMPAIGN_GOAL) * 100;
+                  const liveDonors = CAMPAIGN_BASE_DONORS + botDonorCount;
+                  return (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-mono text-[#2d6a4f] font-bold">
+                          ${liveRaised.toLocaleString()} raised
+                        </span>
+                        <span className="text-[10px] font-mono text-gray-500">
+                          Goal: ${CAMPAIGN_GOAL.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-white/[0.05] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#2d6a4f] via-[#40916c] to-[#52b788] transition-all duration-1000"
+                          style={{ width: `${livePercent}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-[9px] text-gray-500 font-mono">
+                          {liveDonors.toLocaleString()} donors
+                          {botDonorCount > 0 && (
+                            <span className="text-[#2d6a4f]"> (live)</span>
+                          )}
+                        </span>
+                        <span className="text-[9px] font-bold text-[#f77f00] font-mono">
+                          {livePercent.toFixed(1)}% complete
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Countdown Timer */}
                 <div className="flex items-center gap-2 p-2.5 bg-[#f77f00]/[0.06] border border-[#f77f00]/15 rounded-md mb-3">
@@ -3656,18 +3865,97 @@ export default function Home() {
             <h2 className="font-heading text-xl font-bold text-white mb-1">
               Recent Donations
             </h2>
-            <p className="text-xs text-gray-500 mb-6">
+            <p className="text-xs text-gray-500 mb-4">
               SYS.REF: DEMO FEED — SAMPLE DATA FOR ILLUSTRATION PURPOSES
             </p>
+
+            {/* Live Activity Bots panel */}
+            <div className="mb-6 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    {botsActive && (
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2d6a4f] opacity-75" />
+                    )}
+                    <span
+                      className={`relative inline-flex h-2 w-2 rounded-full ${botsActive ? "bg-[#2d6a4f]" : "bg-gray-600"}`}
+                    />
+                  </span>
+                  <Bot size={13} className="text-[#2d6a4f]" />
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-gray-300">
+                    Live Activity Bots
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded border border-[#2d6a4f]/30 bg-[#2d6a4f]/10 font-mono text-[7px] text-[#2d6a4f]">
+                    {botsActive ? "ACTIVE" : "PAUSED"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setBotsActive(v => !v)}
+                  aria-pressed={botsActive}
+                  aria-label={
+                    botsActive
+                      ? "Pause simulated donor activity"
+                      : "Resume simulated donor activity"
+                  }
+                  className={`font-mono text-[9px] px-3 py-1.5 rounded border transition-colors ${
+                    botsActive
+                      ? "border-[#e63946]/30 bg-[#e63946]/10 text-[#e63946] hover:bg-[#e63946]/20"
+                      : "border-[#2d6a4f]/30 bg-[#2d6a4f]/10 text-[#2d6a4f] hover:bg-[#2d6a4f]/20"
+                  }`}
+                >
+                  {botsActive ? "Pause Bots" : "Activate Bots"}
+                </button>
+              </div>
+              <p className="text-[9px] text-gray-500 mb-2">
+                Simulated donors periodically appear below and on the message
+                wall to preview a live, active platform. 100% client-side — no
+                real people, no real money.
+              </p>
+              <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+                {botEvents.length > 0 ? (
+                  botEvents.slice(0, 6).map(evt => (
+                    <div
+                      key={evt.id}
+                      className="flex items-center gap-2 text-[10px] font-mono text-gray-400 bg-white/[0.02] rounded px-2 py-1"
+                    >
+                      <Radio size={9} className="text-[#2d6a4f] shrink-0" />
+                      {evt.kind === "donation" ? (
+                        <span>
+                          <span className="text-gray-200">{evt.name}</span>{" "}
+                          donated{" "}
+                          <span className="text-green-400">{evt.amount}</span>{" "}
+                          to {evt.campaign}
+                        </span>
+                      ) : (
+                        <span>
+                          <span className="text-gray-200">{evt.name}</span>{" "}
+                          posted a message on the Donor Wall
+                        </span>
+                      )}
+                      <span className="ml-auto text-gray-600 shrink-0">
+                        bot
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[9px] text-gray-600 font-mono px-1 py-1">
+                    {botsActive
+                      ? "Waiting for the next simulated event…"
+                      : "Bots are paused — activate to see simulated activity."}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Top Donor Spotlight */}
             {(() => {
               const parseAmount = (a: string) =>
-                parseInt(a.replace(/[$,]/g, ""), 10);
-              const topDonor = RECENT_DONORS.reduce((max, d) =>
+                parseInt(a.replace(/[$,]/g, ""), 10) || 0;
+              const allDonors = [...botDonations, ...RECENT_DONORS];
+              const topDonor = allDonors.reduce((max, d) =>
                 parseAmount(d.amount) > parseAmount(max.amount) ? d : max
               );
-              const recentTotal = RECENT_DONORS.reduce(
+              const recentTotal = allDonors.reduce(
                 (sum, d) => sum + parseAmount(d.amount),
                 0
               );
@@ -3733,8 +4021,10 @@ export default function Home() {
               <Heart size={14} className="text-[#e63946] shrink-0" />
               <p className="text-[10px] text-gray-400 flex-1">
                 Your donation could be featured here next. Join{" "}
-                <span className="text-white font-semibold">489 donors</span> who
-                have already made an impact.
+                <span className="text-white font-semibold">
+                  {(489 + botDonorCount).toLocaleString()} donors
+                </span>{" "}
+                who have already made an impact.
               </p>
               <button
                 onClick={() => setShowDonationModal(true)}
@@ -3794,7 +4084,8 @@ export default function Home() {
               )}
             </div>
             {(() => {
-              const filteredDonors = RECENT_DONORS.filter(
+              const allDonorsForTable = [...botDonations, ...RECENT_DONORS];
+              const filteredDonors = allDonorsForTable.filter(
                 d =>
                   (donorFilterCampaign === "All" ||
                     d.campaign === donorFilterCampaign) &&
@@ -3866,6 +4157,15 @@ export default function Home() {
                                   <span className="text-gray-200 font-medium">
                                     {donor.name}
                                   </span>
+                                  {botDonations.includes(donor) && (
+                                    <span
+                                      title="Simulated live activity"
+                                      className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 font-mono text-[7px] text-[#2d6a4f]"
+                                    >
+                                      <Bot size={7} />
+                                      BOT
+                                    </span>
+                                  )}
                                 </div>
                               </td>
                               <td className="px-4 py-2.5">
@@ -3900,8 +4200,8 @@ export default function Home() {
                   {/* Total summary */}
                   <div className="mt-3 flex items-center justify-between px-4">
                     <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wider">
-                      Showing {filteredDonors.length} of {RECENT_DONORS.length}{" "}
-                      donations
+                      Showing {filteredDonors.length} of{" "}
+                      {allDonorsForTable.length} donations
                     </span>
                     <span className="font-mono text-[10px] text-white font-semibold">
                       Total:{" "}
@@ -4116,6 +4416,15 @@ export default function Home() {
                       {msg.campaign && (
                         <span className="font-mono text-[8px] text-[#6a4c93] bg-[#6a4c93]/10 px-1.5 py-0.5 rounded">
                           {msg.campaign}
+                        </span>
+                      )}
+                      {msg.isBot && (
+                        <span
+                          title="Simulated live activity"
+                          className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#2d6a4f]/10 border border-[#2d6a4f]/30 font-mono text-[7px] text-[#2d6a4f] ml-auto"
+                        >
+                          <Bot size={7} />
+                          BOT
                         </span>
                       )}
                     </div>
